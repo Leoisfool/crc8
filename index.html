@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta charset="utf-8">
+    <title>IEEE 802.3以太网帧封装</title>
+    <!--引入jquery-->
+    <script src="./js/jquery-3.2.1.min.js"></script>
+    <!--引入bootstrap-->
+    <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <script src="./js/bootstrap.min.js"></script>
+    <!--引入Vue-->
+    <script src="./js/vue.min.js"></script>
+</head>
+
+<body>
+    <div id="mainContent">
+        <ul id="myTab" class="nav nav-tabs">
+            <li class="active"><a href="#home" data-toggle="tab">以太网封装</a></li>
+            <li><a href="#principle" data-toggle="tab">封装原理</a></li>
+            <li><a href="#describe" data-toggle="tab">使用方法</a></li>
+        </ul>
+        <div id="myTabContent" class="tab-content">
+            <!--以太网封装内容-->
+            <div class="tab-pane fade in active" id="home"><br><br>
+                <!选择CRC>
+                <div class="row">
+                    <div class="col-md-2"></div>
+                    <span class="col-md-3"><label for="selectCrc"><h4>生成多项式：</h4></label></span>
+                    <div id="selectCrc" class="form-group col-md-4">
+                        <select v-model="selected" class="form-control" v-on:click="crcFunction">  
+                            <option v-for="item in items" v-bind:value="item.text">{{item.text}}</option>  
+                        </select>
+                        <p v-show="showSelected">{{selected}}</p>
+                    </div>
+                </div>
+                <!--数据部分-->
+                <div class="row" id="dataPart">
+                    <div class="col-md-2"></div>
+                    <span class="col-md-3"><label for="shuju"><h4>数据&nbsp;&nbsp;&nbsp;&nbsp;部分：</h4></label></span>
+                    <div class="col-md-4">
+                        <input v-model="gainData" v-on:keyup="gainDataFunction" type="text" class="form-control" placeholder="输入的数据为Hex">
+                        <p v-show="showData">{{gainData}}</p>
+                    </div>
+                </div>
+                <!--原MAC地址-->
+                <div class="row" id="fromMac">
+                    <div class="col-md-2"></div>
+                    <span class="col-md-3"><label><h4>原MAC地址：</h4></label></span>
+                    <div class="col-md-4">
+                        <input type="text" v-model="fMMsg" v-on:keyup="gainMACFunction" class="form-control" placeholder="请填写6字节的Hex">
+                        <p v-show="showFrom">{{fMMsg}}</p>
+                    </div>
+                </div>
+                <!--目的MAC地址-->
+                <div class="row" id="toMac">
+                    <div class="col-md-2"></div>
+                    <span class="col-md-3"><label><h4>目的MAC地址：</h4></label></span>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" v-model="tMMsg" v-on:keyup="toMacFunction" placeholder="请填写6字节的Hex">
+                        <p v-show="showTo">{{tMMsg}}</p>
+                    </div>
+                </div>
+                <br>
+                <div id="calculate1">
+                    <!--计算-->
+                    <div class="row">
+                        <div class="col-md-2"></div>
+                        <button type="button" v-on:click="calculate" class="btn btn-default col-md-7">计算</button>
+                    </div>
+
+                    <!--进度条-->
+                    <!-- <div class="row">
+                        <br>
+                        <div class="col-md-2"></div>
+                        <div class="progress col-md-7">
+                            <div class="progress-bar" v-modle="myProgress" role="progressbar" aria-valuenow="2" aria-valuemin="0" aria-valuemax="100"
+                                style="min-width: 2em; width: 2%;">
+                                {{myProgress}}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-2"></div>
+                        <p v-modle="message"  class="col-md-7">you{{message}}</p>
+                    </div> -->
+                    <!-- 运算进程 -->
+                    <br>
+                    <div class="row">
+                        <div class="col-md-2"></div>
+                        <div class="col-md-7">
+                            <textarea class="form-control" id="progress1" overflow-y v-bind:value="message" cols="34" rows="5"></textarea>
+                        </div>
+                    </div>
+                    <br> 
+                    <!--停止计算-->
+                    <!-- <div class="row">
+                        <div class="col-md-2"></div>
+                        <button type="button" class="btn btn-danger col-md-7">停止计算</button>
+                    </div> -->
+                </div>
+
+                <br>
+                <!--计算出的CRC-->
+                <div class="row" id="theChecksum">
+                    <div class="col-md-2"></div>
+                    <span class="col-md-1"><label for="fsc"><h4>FSC：</h4></label></span>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" id="fcs" disabled>
+                        <p></p>
+                    </div>
+                </div>
+                <!--封装后的以太网帧-->
+                <div class="row">
+                    <div class="col-md-2"></div>
+                    <span class="col-md-2"><label for="jieguo"><h4>封装后的以太网帧:</h4></label></span>
+                </div>
+                <div class="row">
+                    <div class="col-md-2"></div>
+                    <div class="col-md-7">
+                        <textarea class="form-control" disabled name="" id="processed" cols="30" rows="5"></textarea>
+                    </div>
+                </div>
+
+            </div>
+            <!--封装原理-->
+            <div class="tab-pane fade" id="principle">
+                <p>
+                     循环冗余编码(CRC)是一种重要的线性分组码、编码和解码方法，具有简单、检错和纠错能力强等特点，在通信领域广泛地用于实现差错控制。CRC校验码的检错能力很强，不仅能检查出离散错误，还能检查出突发错误。  利用CRC进行检错的过程可简单描述如下：在发送端根据要传送的k位二进制码序列，以一定的规则产生一个校验用的r位监督码(CRC码)，附在原始信息的后边，构成一个新的二进制码序列(共k+r位)，然后发送出去。在接收端，根据信息码和CRC码之间所遵循的规则进行检验，以确定传送中是否出错。这个规则在差错控制理论中称为“生成多项式”。
+                </p>
+            </div>
+        <!--使用方法-->
+            <div class="tab-pane fade" id="describe">
+                <p>原MAC地址与目的MAC地址均为6字节，在该程序中不具有自动填充功能，左移需要输入正确</p>
+                <p>数据字段不足46字节会自动添加0，当数据字段为奇数时，长度字段四舍五入</p>
+            </div>
+        </div>
+    </div>
+    <!--引入自定义文件-->
+    <link rel="stylesheet" href="./css/ethernet.css">
+    <script src="./js/ethernet.js"></script>
+</body>
+
+</html>
